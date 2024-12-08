@@ -1,4 +1,3 @@
-// src/pages/Books/index.tsx
 import React, { useState } from 'react';
 import {
   Table,
@@ -12,18 +11,67 @@ import {
   Button,
   TextField,
   Box,
+  Alert,
+  CircularProgress,
+  Chip,
 } from '@mui/material';
-import { useGetBooksQuery } from '../../services/api';
+import { useGetBooksQuery, useDeleteBookMutation } from '../../services/api';
 import AddBookDialog from '../../components/Books/AddBookDialog';
+import EditBookDialog from '../../components/Books/EditBookDialog';
+import ConfirmDialog from '../../components/Common/ConfirmDialog';
 import type { Book } from '../../types';
 
 const Books: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const { data: response, isLoading } = useGetBooksQuery(searchTerm);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedBook, setSelectedBook] = useState<Book | null>(null);
+
+  const { data: response, isLoading, error } = useGetBooksQuery(searchTerm);
+  const [deleteBook, { isLoading: isDeleting }] = useDeleteBookMutation();
+
+  const handleEdit = (book: Book) => {
+    setSelectedBook(book);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleDelete = (book: Book) => {
+    setSelectedBook(book);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (selectedBook) {
+      try {
+        await deleteBook(selectedBook.id).unwrap();
+        setIsDeleteDialogOpen(false);
+        setSelectedBook(null);
+      } catch (error) {
+        console.error('Failed to delete book:', error);
+      }
+    }
+  };
+
+  const getStatusChipColor = (status: Book['status']) => {
+    switch (status) {
+      case 'available':
+        return 'success';
+      case 'borrowed':
+        return 'warning';
+      case 'reserved':
+        return 'info';
+      default:
+        return 'default';
+    }
+  };
 
   if (isLoading) {
-    return <Typography>Loading...</Typography>;
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+        <CircularProgress />
+      </Box>
+    );
   }
 
   const books = response?.data || [];
@@ -32,13 +80,19 @@ const Books: React.FC = () => {
     <div>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
         <Typography variant="h4">Books</Typography>
-        <Button 
-          variant="contained" 
+        <Button
+          variant="contained"
           onClick={() => setIsAddDialogOpen(true)}
         >
           Add New Book
         </Button>
       </Box>
+
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          Failed to load books. Please try again.
+        </Alert>
+      )}
 
       <TextField
         fullWidth
@@ -67,11 +121,24 @@ const Books: React.FC = () => {
                 <TableCell>{book.title}</TableCell>
                 <TableCell>{book.author}</TableCell>
                 <TableCell>{book.isbn}</TableCell>
-                <TableCell>{book.status}</TableCell>
+                <TableCell>
+                  <Chip
+                    label={book.status}
+                    color={getStatusChipColor(book.status) as any}
+                    size="small"
+                  />
+                </TableCell>
                 <TableCell>{book.location}</TableCell>
                 <TableCell>
-                  <Button size="small">Edit</Button>
-                  <Button size="small" color="secondary">
+                  <Button size="small" onClick={() => handleEdit(book)}>
+                    Edit
+                  </Button>
+                  <Button
+                    size="small"
+                    color="error"
+                    onClick={() => handleDelete(book)}
+                    disabled={isDeleting}
+                  >
                     Delete
                   </Button>
                 </TableCell>
@@ -81,9 +148,32 @@ const Books: React.FC = () => {
         </Table>
       </TableContainer>
 
-      <AddBookDialog 
-        open={isAddDialogOpen} 
-        onClose={() => setIsAddDialogOpen(false)} 
+      <AddBookDialog
+        open={isAddDialogOpen}
+        onClose={() => setIsAddDialogOpen(false)}
+      />
+
+      {selectedBook && (
+        <EditBookDialog
+          open={isEditDialogOpen}
+          onClose={() => {
+            setIsEditDialogOpen(false);
+            setSelectedBook(null);
+          }}
+          book={selectedBook}
+        />
+      )}
+
+      <ConfirmDialog
+        open={isDeleteDialogOpen}
+        onClose={() => {
+          setIsDeleteDialogOpen(false);
+          setSelectedBook(null);
+        }}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Book"
+        message={`Are you sure you want to delete "${selectedBook?.title}"? This action cannot be undone.`}
+        confirmText="Delete"
       />
     </div>
   );

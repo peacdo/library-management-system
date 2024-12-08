@@ -1,4 +1,3 @@
-// src/types/index.ts
 export interface Book {
     id: number;
     title: string;
@@ -7,7 +6,7 @@ export interface Book {
     status: 'available' | 'borrowed' | 'reserved';
     location: string;
   }
-  
+
   export interface User {
     id: number;
     username: string;
@@ -15,19 +14,19 @@ export interface Book {
     role: 'admin' | 'librarian' | 'member';
     status: 'active' | 'inactive';
   }
-  
+
   export interface LibraryStats {
     totalBooks: number;
     borrowedBooks: number;
     activeMembers: number;
     totalMembers: number;
   }
-  
+
   export interface GetBooksResponse {
     data: Book[];
     total: number;
   }
-  
+
   export interface GetUsersResponse {
     data: User[];
     total: number;

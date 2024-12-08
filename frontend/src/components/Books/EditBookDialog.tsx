@@ -1,5 +1,4 @@
-// src/components/Books/AddBookDialog.tsx
-import { FC, useState } from 'react';
+import { FC, useState, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -10,47 +9,43 @@ import {
   Grid,
   MenuItem,
   CircularProgress,
+  Alert,
 } from '@mui/material';
-import { useAddBookMutation } from '../../services/api';
+import { useUpdateBookMutation } from '../../services/api';
 import type { Book } from '../../types';
 
-interface AddBookDialogProps {
+interface EditBookDialogProps {
   open: boolean;
   onClose: () => void;
+  book: Book;
 }
 
-type BookFormData = Omit<Book, 'id'>;
+const EditBookDialog: FC<EditBookDialogProps> = ({ open, onClose, book }) => {
+  const [updateBook, { isLoading, error }] = useUpdateBookMutation();
+  const [formData, setFormData] = useState<Book>(book);
 
-const AddBookDialog: FC<AddBookDialogProps> = ({ open, onClose }) => {
-  const [addBook, { isLoading }] = useAddBookMutation();
-  const [formData, setFormData] = useState<BookFormData>({
-    title: '',
-    author: '',
-    isbn: '',
-    status: 'available',
-    location: '',
-  });
+  useEffect(() => {
+    setFormData(book);
+  }, [book]);
 
   const handleSubmit = async () => {
     try {
-      await addBook(formData).unwrap();
+      await updateBook({ id: book.id, book: formData }).unwrap();
       onClose();
-      setFormData({
-        title: '',
-        author: '',
-        isbn: '',
-        status: 'available',
-        location: '',
-      });
     } catch (error) {
-      console.error('Failed to add book:', error);
+      console.error('Failed to update book:', error);
     }
   };
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Add New Book</DialogTitle>
+      <DialogTitle>Edit Book</DialogTitle>
       <DialogContent>
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            Failed to update book. Please try again.
+          </Alert>
+        )}
         <Grid container spacing={2} sx={{ mt: 1 }}>
           <Grid item xs={12}>
             <TextField
@@ -108,11 +103,11 @@ const AddBookDialog: FC<AddBookDialogProps> = ({ open, onClose }) => {
           disabled={isLoading}
           startIcon={isLoading ? <CircularProgress size={20} /> : null}
         >
-          {isLoading ? 'Adding...' : 'Add Book'}
+          {isLoading ? 'Saving...' : 'Save Changes'}
         </Button>
       </DialogActions>
     </Dialog>
   );
 };
 
-export default AddBookDialog;
+export default EditBookDialog;

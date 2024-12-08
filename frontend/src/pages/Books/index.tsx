@@ -1,4 +1,3 @@
-// src/pages/Books/index.tsx
 import React, { useState } from 'react';
 import {
   Table,
@@ -32,8 +31,8 @@ const Books: React.FC = () => {
     <div>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
         <Typography variant="h4">Books</Typography>
-        <Button 
-          variant="contained" 
+        <Button
+          variant="contained"
           onClick={() => setIsAddDialogOpen(true)}
         >
           Add New Book
@@ -81,9 +80,9 @@ const Books: React.FC = () => {
         </Table>
       </TableContainer>
 
-      <AddBookDialog 
-        open={isAddDialogOpen} 
-        onClose={() => setIsAddDialogOpen(false)} 
+      <AddBookDialog
+        open={isAddDialogOpen}
+        onClose={() => setIsAddDialogOpen(false)}
       />
     </div>
   );
